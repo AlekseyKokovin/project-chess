@@ -25,6 +25,7 @@ class MyWidget(QMainWindow):
         self.selected_figure_label = QLabel(self)
         self.selected_figure_label.setPixmap(selected_figure_pixmap)
         self.selected_figure_label.resize(selected_figure_pixmap.size())
+        self.selected_figure_label.hide()
 
         self.do_paint = False
         self.print_change_flag = False
@@ -43,6 +44,62 @@ class MyWidget(QMainWindow):
         self.start_game.resize(100, 30)
         self.start_game.setText('Начало игры')
         self.start_game.clicked.connect(self.unitUi)
+
+        self.cost = {'пешка': [
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
+            [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
+            [0.5, 0.5, 1.0, 2.5, 2.5, 1.0, 0.5, 0.5],
+            [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
+            [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
+            [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        ], 'конь': [
+            [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0],
+            [-4.0, -2.0, 0.0, 0.0, 0.0, 0.0, -2.0, -4.0],
+            [-3.0, 0.0, 1.0, 1.5, 1.5, 1.0, 0.0, -3.0],
+            [-3.0, 0.5, 1.5, 2.0, 2.0, 1.5, 0.5, -3.0],
+            [-3.0, 0.0, 1.5, 2.0, 2.0, 1.5, 0.0, -3.0],
+            [-3.0, 0.5, 1.0, 1.5, 1.5, 1.0, 0.5, -3.0],
+            [-4.0, -2.0, 0.0, 0.5, 0.5, 0.0, -2.0, -4.0],
+            [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
+        ], 'слон': [
+            [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0],
+            [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            [-1.0, 0.0, 0.5, 1.0, 1.0, 0.5, 0.0, -1.0],
+            [-1.0, 0.5, 0.5, 1.0, 1.0, 0.5, 0.5, -1.0],
+            [-1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, -1.0],
+            [-1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0],
+            [-1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, -1.0],
+            [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0]
+        ], 'ладья': [
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5],
+            [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0]
+        ], 'королева': [
+            [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0],
+            [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+            [-1.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0, -1.0],
+            [-0.5, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0, -0.5],
+            [0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0, -0.5],
+            [-1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.0, -1.0],
+            [-1.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, -1.0],
+            [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0]
+        ], 'король': [
+            [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+            [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+            [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+            [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+            [-2.0, -3.0, -3.0, -4.0, -4.0, -3.0, -3.0, -2.0],
+            [-1.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -1.0],
+            [2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0],
+            [2.0, 3.0, 1.0, 0.0, 0.0, 1.0, 3.0, 2.0]
+        ]}
 
         self.figures = {}
         i_name = 'белый '
@@ -71,7 +128,7 @@ class MyWidget(QMainWindow):
             self.loop.exit(0)
 
     def wait_for_click(self):
-        self.loop = QEventLoop(self)  # Используйте exit вместо quit
+        self.loop = QEventLoop(self)
         self.loop.exec_()
 
     def get_possition(self, x, y):
@@ -105,22 +162,22 @@ class MyWidget(QMainWindow):
                         self.figures[board.field_layout[y][x].figure()][0].move(28 + x * 77, 66 + y * 78)
 
     def print_change(self, moves):
-        self.green_image_image = QImage('файлы проекта/green_image.png')
-        self.green_image_pixmap = QPixmap(self.green_image_image)
+        green_image_image = QImage('файлы проекта/green_image.png')
+        green_image_pixmap = QPixmap(green_image_image)
 
-        self.red_image_image = QImage('файлы проекта/red_image.png')
-        self.red_image_pixmap = QPixmap(self.red_image_image)
+        red_image_image = QImage('файлы проекта/red_image.png')
+        red_image_pixmap = QPixmap(red_image_image)
 
         self.labels_for_print_change = []
         for i in range(len(moves)):
             y, x = moves[i]
             label = QLabel(self)
             if self.board.field_layout[y][x]:
-                label.setPixmap(self.red_image_pixmap)
-                label.resize(self.red_image_pixmap.size())
+                label.setPixmap(red_image_pixmap)
+                label.resize(red_image_pixmap.size())
             else:
-                label.setPixmap(self.green_image_pixmap)
-                label.resize(self.green_image_pixmap.size())
+                label.setPixmap(green_image_pixmap)
+                label.resize(green_image_pixmap.size())
             label.show()
             label.move(28 + x * 77, 66 + y * 78)
             self.labels_for_print_change.append(label)
@@ -134,59 +191,65 @@ class MyWidget(QMainWindow):
         self.selected_figure_label.move(28 + x * 77, 66 + y * 78)
 
     def unitUi(self):
-        self.cost = {'пешка': 10, 'конь': 30, 'слон': 30, 'ладья': 50, 'королева': 90, 'король': 0}
-
-        def minimax(board, depth, max_min):
+        def minimax(board, depth, alpha, beta, max_min):
             board.mat(*board.king('белый'), 'белый')
             board.mat(*board.king('черный'), 'черный')
             if depth == 0 or board.game_over:
                 value = 0
-                for j in board.field_layout:
-                    for i in j:
-                        if i and i.figure().split()[0] == self.opposite_color:
-                            value -= self.cost[i.figure().split()[1]]
-                        elif i:
-                            value -= self.cost[i.figure().split()[1]]
+                for j in range(len(board.field_layout)):
+                    for i in range(len(board.field_layout[j])):
+                        if (board.field_layout[j][i] and board.field_layout[j][i].figure().split()[0]
+                                == self.opposite_color):
+                            value -= self.cost[board.field_layout[j][i].figure().split()[1]][j][i]
+                        elif board.field_layout[j][i]:
+                            value += self.cost[board.field_layout[j][i].figure().split()[1]][j][i]
                 return value
             board1 = deepcopy(board)
-            possible_moves = board.possible_moves_team(self.opposite_color)
+            possible_moves = board1.possible_moves_team(self.opposite_color)
             if max_min:
-                max_value = float('inf')
+                max_value = -100000
                 for move in possible_moves:
-                    if board.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
-                        board.move(*move, type_of_figure='королева')
+                    if board1.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
+                        board1.move(*move, type_of_figure='королева')
                     else:
-                        board.move(*move)
-                    num = minimax(board, depth - 1, False)
-                    board = deepcopy(board1)
+                        board1.move(*move)
+                    num = minimax(board1, depth - 1, alpha, beta, False)
+                    board1 = deepcopy(board)
                     max_value = max(num, max_value)
+                    alpha = max(alpha, num)
+                    if beta <= alpha:
+                        break
                 return max_value
             else:
-                min_value = float('inf')
+                min_value = 10000000
                 for move in possible_moves:
-                    if board.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
-                        board.move(*move, type_of_figure='королева')
+                    if board1.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
+                        board1.move(*move, type_of_figure='королева')
                     else:
-                        board.move(*move)
-                    num = minimax(board, depth - 1, True)
-                    board = deepcopy(board1)
+                        board1.move(*move)
+                    num = minimax(board, depth - 1, alpha, beta, True)
+                    board1 = deepcopy(board)
                     min_value = min(num, min_value)
+                    beta = min(beta, num)
+                    if beta <= alpha:
+                        break
                 return min_value
 
         def best_move(board):
             possible_moves = board.possible_moves_team(self.opposite_color)
-            board1 = deepcopy(board)
+            board_copy = deepcopy(board)
             best_move = ''
-            best_num = -1000000000000000000000000000
+            alpha = -1000000
+            beta = 1000000
             for move in possible_moves:
-                if board.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
-                    board.move(*move, type_of_figure='королева')
+                if board_copy.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
+                    board_copy.move(*move, type_of_figure='королева')
                 else:
-                    board.move(*move)
-                num = minimax(board, 1, False)
-                board = deepcopy(board1)
-                if num > best_num:
-                    best_num = num
+                    board_copy.move(*move)
+                num = minimax(board_copy, 3, alpha, beta, False)
+                board_copy = deepcopy(board)
+                if num > alpha:
+                    alpha = num
                     best_move = move
             return best_move
 
@@ -216,11 +279,18 @@ class MyWidget(QMainWindow):
             while (y, x) not in self.moves_for_figure:
                 if (self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0]
                         != self.opposite_color):
-
+                    self.clear_labels_after_change()
+                    self.repaint_selected_figure_flag = True
+                    self.y_selected_figure, self.x_selected_figure = y, x
+                    self.repaint()
+                    self.moves_for_figure = self.board.field_layout[y][x].get_moves(self.board.field_layout, y, x)
+                    self.print_change_flag = True
+                    self.repaint()
+                    return y, x, True
                 self.wait_for_click()
                 y, x = self.clicked_coords
             self.clear_labels_after_change()
-            return y, x
+            return y, x, False
 
         def main():
             self.start_game.setEnabled(False)
@@ -239,12 +309,16 @@ class MyWidget(QMainWindow):
                 flag = True
                 self.do_paint = True
                 self.repaint()
+                self.num_of_clicks = 0
+                while self.num_of_clicks == 0:
+                    y, x, self.num_of_clicks = get_person_move()
                 while flag:
-                    self.num_of_clicks = 0
-                    while self.num_of_clicks == 0:
-                        y, x, self.num_of_clicks = get_person_move()
-                    move, flag = get_person_move()
-                self.board.move(y, x, *move)
+                    y_to, x_to, flag = get_person_move()
+                    if flag:
+                        y = y_to
+                        x = x_to
+                self.selected_figure_label.hide()
+                self.board.move(y, x, y_to, x_to)
                 if self.board.mat(*self.board.king(self.opposite_color), self.opposite_color):
                     break
                 self.do_paint = True
@@ -292,7 +366,6 @@ class MyWidget(QMainWindow):
                 for i in self.field_layout[y_now][x_now].get_moves(self.field_layout, y_now, x_now):
                     self.move(y_now, x_now, i[0], i[1])
                     if not self.shah(self.field_layout[i[0]][i[1]].figure().split()[0]):
-                        j = (y_now, x_now, i[0], i[1])
                         return_coords.append(i)
                     self.move(i[0], i[1], y_now, x_now)
                 return return_coords
@@ -345,14 +418,17 @@ class MyWidget(QMainWindow):
                     self.field_layout[y_now][x_now] = None
                     return True
                 self.field_layout[y_now][x_now], self.field_layout[y_to][x_to] = None, self.field_layout[y_now][x_now]
-                if self.field_layout[y_to][x_to].figure().split()[1] == 'король' and abs(
-                        x_to - x_now) == 2 and y_now - y_to == 0:
-                    if x_to - x_now == -2:
-                        self.field_layout[y_now][x_now - 4], self.field_layout[y_to][x_to + 1] = None, \
-                            self.field_layout[y_now][x_now - 4]
-                    else:
-                        self.field_layout[y_now][x_now + 3], self.field_layout[y_to][x_to - 1] = None, \
-                            self.field_layout[y_now][x_now + 3]
+                try:
+                    if self.field_layout[y_to][x_to].figure().split()[1] == 'король' and abs(
+                            x_to - x_now) == 2 and y_now - y_to == 0:
+                        if x_to - x_now == -2:
+                            self.field_layout[y_now][x_now - 4], self.field_layout[y_to][x_to + 1] = None, \
+                                self.field_layout[y_now][x_now - 4]
+                        else:
+                            self.field_layout[y_now][x_now + 3], self.field_layout[y_to][x_to - 1] = None, \
+                                self.field_layout[y_now][x_now + 3]
+                except Exception as x:
+                    print(x, y_to, x_to, y_now, x_now)
                 try:
                     self.field_layout[y_now][x_now].moved()
                 except Exception:
@@ -368,40 +444,26 @@ class MyWidget(QMainWindow):
 
             def get_moves(self, board, y_now, x_now):
                 moves_possible = []
-                for y in range(y_now + 1, 8):
-                    for x in range(x_now + 1, 8):
-                        if board[y][x] and board[y][x].figure().split()[1] == 'король':
+
+                def check_sequence(cof):
+                    for coficeint in range(cof):
+                        if board[y_now + coficeint][x_now + coficeint] and \
+                                board[y_now + coficeint][x_now + coficeint].figure().split()[1] == 'король':
                             break
-                        elif board[y][x] and board[y][x].figure().split()[0] != self.color:
-                            moves_possible.append((y, x))
+                        elif board[y_now + coficeint][x_now + coficeint] and \
+                                board[y_now + coficeint][x_now + coficeint].figure().split()[0] != self.color:
+                            moves_possible.append((y_now + coficeint, x_now + coficeint))
                             break
-                        else:
-                            moves_possible.append((y, x))
-                    for x in range(x_now - 1, -1):
-                        if board[y][x] and board[y][x].figure().split()[1] == 'король':
-                            break
-                        elif board[y][x] and board[y][x].figure().split()[0] != self.color:
-                            moves_possible.append((y, x))
+                        elif board[y_now + coficeint][x_now + coficeint] and \
+                                board[y_now + coficeint][x_now + coficeint].figure().split()[0] == self.color:
                             break
                         else:
-                            moves_possible.append((y, x))
-                for y in range(y_now - 1, -1):
-                    for x in range(x_now + 1, 8):
-                        if board[y][x] and board[y][x].figure().split()[1] == 'король':
-                            break
-                        elif board[y][x] and board[y][x].figure().split()[0] != self.color:
-                            moves_possible.append((y, x))
-                            break
-                        else:
-                            moves_possible.append((y, x))
-                    for x in range(x_now, -1):
-                        if board[y][x] and board[y][x].figure().split()[1] == 'король':
-                            break
-                        elif board[y][x] and board[y][x].figure().split()[0] != self.color:
-                            moves_possible.append((y, x))
-                            break
-                        else:
-                            moves_possible.append((y, x))
+                            moves_possible.append((y_now + coficeint, x_now + coficeint))
+
+                check_sequence(min(8 - y_now, 8 - x_now))
+                check_sequence(min(8 - y_now, 8 + x_now))
+                check_sequence(min(8 + y_now, 8 - x_now))
+                check_sequence(min(8 + y_now, 8 + x_now))
                 return moves_possible
 
         class Pawn:
@@ -463,6 +525,8 @@ class MyWidget(QMainWindow):
                     elif board[y][x_now] and board[y][x_now].figure().split()[0] != self.color:
                         moves_possible.append((y, x_now))
                         break
+                    elif board[y][x_now] and board[y][x_now].figure().split()[0] == self.color:
+                        break
                     else:
                         moves_possible.append((y, x_now))
                 for y in range(y_now + 1, 8):
@@ -470,6 +534,8 @@ class MyWidget(QMainWindow):
                         break
                     elif board[y][x_now] and board[y][x_now].figure().split()[0] != self.color:
                         moves_possible.append((y, x_now))
+                        break
+                    elif board[y][x_now] and board[y][x_now].figure().split()[0] == self.color:
                         break
                     else:
                         moves_possible.append((y, x_now))
@@ -479,6 +545,8 @@ class MyWidget(QMainWindow):
                     elif board[y_now][x] and board[y_now][x].figure().split()[0] != self.color:
                         moves_possible.append((y_now, x))
                         break
+                    elif board[y_now][x] and board[y_now][x].figure().split()[0] == self.color:
+                        break
                     else:
                         moves_possible.append((y_now, x))
                 for x in range(x_now - 1, -1):
@@ -486,6 +554,8 @@ class MyWidget(QMainWindow):
                         break
                     elif board[y_now][x] and board[y_now][x].figure().split()[0] != self.color:
                         moves_possible.append((y_now, x))
+                        break
+                    elif board[y_now][x] and board[y_now][x].figure().split()[0] == self.color:
                         break
                     else:
                         moves_possible.append((y_now, x))
@@ -506,8 +576,9 @@ class MyWidget(QMainWindow):
                 move_possible = []
                 for i in coordinates:
                     y, x = i
-                    if self.check_numbers(y, x) and (board[y][x] and board[y][x].figure().split()[1] == 'король' and
-                                                     board[y_now][x].figure().split()[0] != self.color):
+                    if self.check_numbers(y, x) and ((board[y][x] and board[y][x].figure().split()[1] != 'король' and
+                                                      board[y][x].figure().split()[0] != self.color) or not board[y][
+                        x]):
                         move_possible.append((y, x))
                 return move_possible
 
@@ -581,9 +652,6 @@ class MyWidget(QMainWindow):
                 return first.get_moves(board, y_now, x_now) + second.get_moves(board, y_now, x_now)
 
         main()
-
-    def show_figures(self):
-        pass
 
 
 if __name__ == '__main__':

@@ -101,24 +101,7 @@ class MyWidget(QMainWindow):
             [2.0, 3.0, 1.0, 0.0, 0.0, 1.0, 3.0, 2.0]
         ]}
 
-        self.figures = {}
-        i_name = 'белый '
-        for i in ['figures_white', 'figures_black']:
-            for j in ['конь', 'пешка', 'слон', 'король', 'королева', 'ладья']:
-                link = sqlite3.connect('файлы проекта/шахматы/chess.db').cursor().execute(
-                    f"""SELECT link FROM {i} WHERE name = '{j}'""").fetchone()
-                all_the_labels = []
-                for time in range(8 if j == 'пешка' else 1 if j == 'король' or j == 'королева' else 2):
-                    pic_pixmap = QPixmap(link[0])
-                    pic_pixmap = pic_pixmap.scaled(70, 70, Qt.KeepAspectRatio)
-                    pic_label = QLabel(self)
-                    pic_label.resize(pic_pixmap.size())
-                    pic_label.setPixmap(pic_pixmap)
-                    pic_label.move(100, 100)
-                    pic_label.hide()
-                    all_the_labels.append(pic_label)
-                self.figures[i_name + j] = all_the_labels
-            i_name = 'черный '
+        self.cost_basic = {'пешка': 10, 'конь': 30, 'слон': 30, 'ладья': 50, 'королева': 90, 'король': 900}
 
         self.white_color.click()
 
@@ -200,9 +183,11 @@ class MyWidget(QMainWindow):
                     for i in range(len(board.field_layout[j])):
                         if (board.field_layout[j][i] and board.field_layout[j][i].figure().split()[0]
                                 == self.opposite_color):
-                            value -= self.cost[board.field_layout[j][i].figure().split()[1]][j][i]
+                            value += (self.cost_basic[board.field_layout[j][i].figure().split()[1]] +
+                                      self.cost[board.field_layout[j][i].figure().split()[1]][7 - j][i])
                         elif board.field_layout[j][i]:
-                            value += self.cost[board.field_layout[j][i].figure().split()[1]][j][i]
+                            value -= (self.cost_basic[board.field_layout[j][i].figure().split()[1]] +
+                                      self.cost[board.field_layout[j][i].figure().split()[1]][j][i])
                 return value
             board1 = deepcopy(board)
             possible_moves = board1.possible_moves_team(self.opposite_color)
@@ -213,10 +198,13 @@ class MyWidget(QMainWindow):
                         board1.move(*move, type_of_figure='королева')
                     else:
                         board1.move(*move)
+                        if board1.shah(self.opposite_color):
+                            board1 = deepcopy(board)
+                            continue
                     num = minimax(board1, depth - 1, alpha, beta, False)
                     board1 = deepcopy(board)
                     max_value = max(num, max_value)
-                    alpha = max(alpha, num)
+                    alpha = max(alpha, max_value)
                     if beta <= alpha:
                         break
                 return max_value
@@ -225,12 +213,18 @@ class MyWidget(QMainWindow):
                 for move in possible_moves:
                     if board1.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
                         board1.move(*move, type_of_figure='королева')
+                        if board1.shah(self.opposite_color):
+                            board1 = deepcopy(board)
+                            continue
                     else:
                         board1.move(*move)
+                        if board1.shah(self.opposite_color):
+                            board1 = deepcopy(board)
+                            continue
                     num = minimax(board, depth - 1, alpha, beta, True)
                     board1 = deepcopy(board)
                     min_value = min(num, min_value)
-                    beta = min(beta, num)
+                    beta = min(beta, min_value)
                     if beta <= alpha:
                         break
                 return min_value
@@ -293,6 +287,25 @@ class MyWidget(QMainWindow):
             return y, x, False
 
         def main():
+
+            self.figures = {}
+            i_name = 'белый '
+            for i in ['figures_white', 'figures_black']:
+                for j in ['конь', 'пешка', 'слон', 'король', 'королева', 'ладья']:
+                    link = sqlite3.connect('файлы проекта/шахматы/chess.db').cursor().execute(
+                        f"""SELECT link FROM {i} WHERE name = '{j}'""").fetchone()
+                    all_the_labels = []
+                    for time in range(8 if j == 'пешка' else 1 if j == 'король' or j == 'королева' else 2):
+                        pic_pixmap = QPixmap(link[0])
+                        pic_pixmap = pic_pixmap.scaled(70, 70, Qt.KeepAspectRatio)
+                        pic_label = QLabel(self)
+                        pic_label.resize(pic_pixmap.size())
+                        pic_label.setPixmap(pic_pixmap)
+                        pic_label.move(100, 100)
+                        pic_label.hide()
+                        all_the_labels.append(pic_label)
+                    self.figures[i_name + j] = all_the_labels
+                i_name = 'черный '
             self.start_game.setEnabled(False)
             if self.white_color.isChecked():
                 color_first = 'белый'
@@ -391,7 +404,9 @@ class MyWidget(QMainWindow):
                 elif color == 'белыц':
                     color = 'черный'
                 possible_moves_of = self.possible_moves_team(color, flag=True)
-                return any([self.field_layout[i[2]][i[3]].figure().split()[1] == 'король' for i in possible_moves_of])
+                return any(
+                    [self.field_layout[i[2]][i[3]] and self.field_layout[i[2]][i[3]].figure() == f'{color} король' for i
+                     in possible_moves_of])
 
             def possible_moves_team(self, color, flag=False):
                 all_possible_moves = []
@@ -446,7 +461,7 @@ class MyWidget(QMainWindow):
                 moves_possible = []
 
                 def check_sequence(cof):
-                    for coficeint in range(cof):
+                    for coficeint in range(*cof):
                         if board[y_now + coficeint][x_now + coficeint] and \
                                 board[y_now + coficeint][x_now + coficeint].figure().split()[1] == 'король':
                             break
@@ -460,10 +475,10 @@ class MyWidget(QMainWindow):
                         else:
                             moves_possible.append((y_now + coficeint, x_now + coficeint))
 
-                check_sequence(min(8 - y_now, 8 - x_now))
-                check_sequence(min(8 - y_now, 8 + x_now))
-                check_sequence(min(8 + y_now, 8 - x_now))
-                check_sequence(min(8 + y_now, 8 + x_now))
+                check_sequence((1, min(8 - y_now, 8 - x_now)))
+                check_sequence((0, x_now - 8, -1))
+                check_sequence((0, y_now - 8, -1))
+                check_sequence((-1, max(-1 - y_now, -1 - x_now), -1))
                 return moves_possible
 
         class Pawn:

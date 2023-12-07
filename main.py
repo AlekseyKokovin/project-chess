@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QRadioButton, QPu
 
 # поменять размер - self.pixmap = self.pixmap.scaled(150, 150, Qt.KeepAspectRatio)
 
-class MyWidget(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setGeometry(0, 0, 675, 715)
@@ -422,12 +422,12 @@ class MyWidget(QMainWindow):
                     color = 'белый'
                 elif color == 'белыц':
                     color = 'черный'
-                moves = self.possible_moves_team(color, True)
+                moves = list(map(lambda x: (x[2], x[3]), self.possible_moves_team(color, True)))
                 list_of_hits = []
                 for y in range(y_king - 1, y_king + 1):
                     for x in range(x_king - 1, x_king + 1):
                         if 0 <= y <= 7 and 0 <= x <= 7:
-                            list_of_hits.append((y, x) in (moves[2], moves[3]))
+                            list_of_hits.append((y, x) in moves)
                 if all(list_of_hits):
                     self.game_over = True
                 return all(list_of_hits)
@@ -796,6 +796,6 @@ class Promotion(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = MyWidget()
+    ex = MainWindow()
     ex.show()
     sys.exit(app.exec_())

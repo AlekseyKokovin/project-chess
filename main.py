@@ -13,6 +13,9 @@ class MyWidget(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setGeometry(0, 0, 675, 715)
+        self.setWindowTitle('Шахматы')
+        self.result_text = QLabel()
+        self.result_text.move(0, 10)
 
         self.field_label = QLabel(self)
         self.field_pixmap = QPixmap('файлы проекта/шахматная доска.jpg')
@@ -30,14 +33,6 @@ class MyWidget(QMainWindow):
         self.do_paint = False
         self.print_change_flag = False
         self.repaint_selected_figure_flag = False
-
-        self.white_color = QRadioButton(self)
-        self.white_color.move(250, 10)
-        self.white_color.setText('Белые')
-
-        self.black_color = QRadioButton(self)
-        self.black_color.move(325, 10)
-        self.black_color.setText('Черные')
 
         self.start_game = QPushButton(self)
         self.start_game.move(425, 10)
@@ -102,8 +97,6 @@ class MyWidget(QMainWindow):
         ]}
 
         self.cost_basic = {'пешка': 10, 'конь': 30, 'слон': 30, 'ладья': 50, 'королева': 90, 'король': 900}
-
-        self.white_color.click()
 
     def mousePressEvent(self, event):
         if 28 <= event.x() <= 647 and 66 <= event.y() <= 687:
@@ -175,9 +168,7 @@ class MyWidget(QMainWindow):
 
     def unitUi(self):
         def minimax(board, depth, alpha, beta, max_min):
-            board.mat(*board.king('белый'), 'белый')
-            board.mat(*board.king('черный'), 'черный')
-            if depth == 0 or board.game_over:
+            if depth == 0 or board.mat(*board.king('черный'), 'черный') or board.mat(*board.king('белый'), 'белый'):
                 value = 0
                 for j in range(len(board.field_layout)):
                     for i in range(len(board.field_layout[j])):
@@ -229,9 +220,8 @@ class MyWidget(QMainWindow):
         def best_move(board):
             possible_moves = board.possible_moves_team(self.opposite_color)
             board_copy = deepcopy(board)
+            best_num = -100000
             best_move = ''
-            alpha = -1000000
-            beta = 1000000
             for move in possible_moves:
                 if board_copy.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
                     board_copy.move(*move, type_of_figure='королева')
@@ -240,10 +230,11 @@ class MyWidget(QMainWindow):
                 if board_copy.shah(self.opposite_color):
                     board_copy = deepcopy(board)
                     continue
-                num = minimax(board_copy, 3, alpha, beta, False)
+                num = minimax(board_copy, 1, -1000000, 1000000, False)
+                # поменять depth после тестов
                 board_copy = deepcopy(board)
-                if num > alpha:
-                    alpha = num
+                if num > best_num:
+                    best_num = num
                     best_move = move
             return best_move
 
@@ -265,14 +256,9 @@ class MyWidget(QMainWindow):
             y, x = self.clicked_coords
             if self.num_of_clicks == 0:
                 while not self.board.field_layout[y][x] or (
-                        self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0] ==
-                        self.main_color and get_moves_clean(y, x, self.main_color)):
-                    if self.board.field_layout[y][x].figure().split()[0] != self.opposite_color:
-                        self.repaint_selected_figure_flag = True
-                        self.y_selected_figure, self.x_selected_figure = y, x
-                        self.repaint()
-                    else:
-                        self.statusBar().showMessage('Неправильная фигура', 100)
+                        self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0]
+                        == self.opposite_color):
+                    self.statusBar().showMessage('Неправильная фигура', 100)
                     self.wait_for_click()
                     y, x = self.clicked_coords
                 self.repaint_selected_figure_flag = True
@@ -290,7 +276,7 @@ class MyWidget(QMainWindow):
                     self.repaint_selected_figure_flag = True
                     self.y_selected_figure, self.x_selected_figure = y, x
                     self.repaint()
-                    self.moves_for_figure = self.board.field_layout[y][x].get_moves(self.board.field_layout, y, x)
+                    self.moves_for_figure = get_moves_clean(y, x, self.main_color)
                     self.print_change_flag = True
                     self.repaint()
                     return y, x, True
@@ -308,7 +294,7 @@ class MyWidget(QMainWindow):
                     link = sqlite3.connect('файлы проекта/шахматы/chess.db').cursor().execute(
                         f"""SELECT link FROM {i} WHERE name = '{j}'""").fetchone()
                     all_the_labels = []
-                    for time in range(8 if j == 'пешка' else 1 if j == 'король' or j == 'королева' else 2):
+                    for time in range(9):
                         pic_pixmap = QPixmap(link[0])
                         pic_pixmap = pic_pixmap.scaled(70, 70, Qt.KeepAspectRatio)
                         pic_label = QLabel(self)
@@ -319,20 +305,21 @@ class MyWidget(QMainWindow):
                         all_the_labels.append(pic_label)
                     self.figures[i_name + j] = all_the_labels
                 i_name = 'черный '
+            self.result_text.setText('')
             self.start_game.setEnabled(False)
-            if self.white_color.isChecked():
-                color_first = 'белый'
-                color_second = 'черный'
-            else:
-                color_first = 'черный'
-                color_second = 'белый'
+            color_first = 'белый'
+            color_second = 'черный'
             self.opposite_color = color_second
             self.main_color = color_first
-            self.white_color.setEnabled(False)
-            self.black_color.setEnabled(False)
             # основной код
             self.board = Board(color_first, color_second)
             while True:
+                if self.board.mat(*self.board.king(self.main_color), self.main_color):
+                    self.result_text.setText('Бот выиграл')
+                    break
+                if check_for_draw(self.board.field_layout):
+                    self.result_text.setText('Ничья')
+                    break
                 flag = True
                 self.do_paint = True
                 self.repaint()
@@ -345,28 +332,56 @@ class MyWidget(QMainWindow):
                         y = y_to
                         x = x_to
                 self.selected_figure_label.hide()
-                self.board.move(y, x, y_to, x_to)
+                self.type_of_figure = ''
+                if self.board.field_layout[y][x].figure() == 'белый пешка' and y == 6 and y_to == 7:
+                    promotion_figure = Promotion(parent=self)
+                    promotion_figure.show()
+                    promotion_figure.main()
+                if self.type_of_figure:
+                    self.board.move(y, x, y_to, x_to, type_of_figure=self.type_of_figure)
+                else:
+                    self.board.move(y, x, y_to, x_to)
                 if self.board.mat(*self.board.king(self.opposite_color), self.opposite_color):
+                    self.result_text.setText('Вы выиграли')
+                    break
+                if check_for_draw(self.board.field_layout):
+                    self.result_text.setText('Ничья')
                     break
                 self.do_paint = True
                 self.repaint()
                 move_bot = best_move(self.board)
+                if not move_bot:
+                    self.result_text.setText('Вы выиграли')
+                    break
+                if check_for_draw(self.board.field_layout):
+                    self.result_text.setText('Ничья')
+                    break
                 self.board.move(*move_bot)
                 self.do_paint = True
                 self.repaint()
             # разблокирование всех кнопок
-            self.white_color.setEnabled(True)
-            self.black_color.setEnabled(True)
+            for name in self.figures:
+                for label in self.figures[name]:
+                    label.hide()
             self.start_game.setEnabled(True)
+
+        def check_for_draw(board):
+            amout_of_figures = 0
+            for row in board:
+                for figure in row:
+                    if figure:
+                        amout_of_figures += 1
+            return amout_of_figures == 2
 
         class Board:
             def __init__(self, first_color, second_color):
                 self.game_over = False
+                self.number_of_label = {'слон': 2, 'конь': 2, 'королева': 1, 'ладья': 2}
                 self.field_layout = []
                 for row in range(8):
                     self.field_layout.append([None] * 8)
                 self.field_layout[0] = [
-                    Rook(first_color, 0), Knight(first_color, 0), Bishop(first_color, 0), Queen(first_color),
+                    Rook(first_color, 0), Knight(first_color, 0), Bishop(first_color, 0), Queen(first_color, 0),
                     King(first_color), Bishop(first_color, 1), Knight(first_color, 1), Rook(first_color, 1)
                 ]
                 self.field_layout[1] = [
@@ -378,7 +393,7 @@ class MyWidget(QMainWindow):
                     Pawn(second_color, 4), Pawn(second_color, 5), Pawn(second_color, 6), Pawn(second_color, 7)
                 ]
                 self.field_layout[7] = [
-                    Rook(second_color, 0), Knight(second_color, 0), Bishop(second_color, 0), Queen(second_color),
+                    Rook(second_color, 0), Knight(second_color, 0), Bishop(second_color, 0), Queen(second_color, 0),
                     King(second_color), Bishop(second_color, 1), Knight(second_color, 1), Rook(second_color, 1)
                 ]
 
@@ -437,16 +452,23 @@ class MyWidget(QMainWindow):
 
             def move(self, y_now, x_now, y_to, x_to, type_of_figure=None):
                 if type_of_figure:
+                    number = self.number_of_label[type_of_figure.lower()]
+                    self.number_of_label[type_of_figure.lower()] += 1
                     if type_of_figure.lower() == 'ладья':
-                        self.field_layout[y_to][x_to] = Rook(self.field_layout[y_now][x_now].figure().split()[0])
+                        self.field_layout[y_to][x_to] = Rook(self.field_layout[y_now][x_now].figure().split()[0],
+                                                             number)
                     elif type_of_figure.lower() == 'королева':
-                        self.field_layout[y_to][x_to] = Queen(self.field_layout[y_now][x_now].figure().split()[0])
+                        self.field_layout[y_to][x_to] = Queen(self.field_layout[y_now][x_now].figure().split()[0],
+                                                              number)
                     elif type_of_figure.lower() == 'слон':
-                        self.field_layout[y_to][x_to] = Bishop(self.field_layout[y_now][x_now].figure().split()[0])
+                        self.field_layout[y_to][x_to] = Bishop(self.field_layout[y_now][x_now].figure().split()[0],
+                                                               number)
                     elif type_of_figure.lower() == 'конь':
-                        self.field_layout[y_to][x_to] = Knight(self.field_layout[y_now][x_now].figure().split()[0])
+                        self.field_layout[y_to][x_to] = Knight(self.field_layout[y_now][x_now].figure().split()[0],
+                                                               number)
                     elif type_of_figure.lower() == 'пешка' and y_now > y_to:
-                        self.field_layout[y_to][x_to] = Pawn(self.field_layout[y_now][x_now].figure().split()[0])
+                        self.field_layout[y_to][x_to] = Pawn(self.field_layout[y_now][x_now].figure().split()[0],
+                                                             number)
                     self.field_layout[y_now][x_now] = None
                     return True
                 if (self.field_layout[y_now][x_now] and self.field_layout[y_now][x_now].figure().split()[1]
@@ -690,8 +712,9 @@ class MyWidget(QMainWindow):
                 return 0 <= x <= 7 and 0 <= y <= 7
 
         class Queen:
-            def __init__(self, color):
+            def __init__(self, color, n):
                 self.color = color
+                self.n = 0
 
             def figure(self):
                 return f"{self.color} королева"
@@ -702,6 +725,67 @@ class MyWidget(QMainWindow):
                 return first.get_moves(board, y_now, x_now) + second.get_moves(board, y_now, x_now)
 
         main()
+
+
+class Promotion(QMainWindow):
+    def __init__(self, parent):
+        super().__init__(parent=None)
+        self.parent = parent
+        self.setGeometry(500, 500, 240, 50)
+        self.setWindowTitle('Выберите фигуру')
+        self.coords = []
+
+        queen_qpixmap = QPixmap('файлы проекта/шахматы/белые/королева.png')
+        queen_qpixmap = queen_qpixmap.scaled(50, 40, Qt.KeepAspectRatio)
+        self.queen_label = QLabel(self)
+        self.queen_label.setPixmap(queen_qpixmap)
+        self.queen_label.resize(queen_qpixmap.size())
+        self.queen_label.move(10, 10)
+
+        knight_qpixmap = QPixmap('файлы проекта/шахматы/белые/конь.png')
+        knight_qpixmap = knight_qpixmap.scaled(50, 40, Qt.KeepAspectRatio)
+        self.knight_label = QLabel(self)
+        self.knight_label.setPixmap(knight_qpixmap)
+        self.knight_label.resize(knight_qpixmap.size())
+        self.knight_label.move(70, 10)
+
+        rook_qpixmap = QPixmap('файлы проекта/шахматы/белые/ладья.png')
+        rook_qpixmap = rook_qpixmap.scaled(50, 40, Qt.KeepAspectRatio)
+        self.rook_label = QLabel(self)
+        self.rook_label.setPixmap(rook_qpixmap)
+        self.rook_label.resize(rook_qpixmap.size())
+        self.rook_label.move(130, 10)
+
+        bishop_qpixmap = QPixmap('файлы проекта/шахматы/белые/слон.png')
+        bishop_qpixmap = bishop_qpixmap.scaled(50, 40, Qt.KeepAspectRatio)
+        self.bishop_label = QLabel(self)
+        self.bishop_label.setPixmap(bishop_qpixmap)
+        self.bishop_label.resize(bishop_qpixmap.size())
+        self.bishop_label.move(190, 10)
+
+    def get_promotion_figure(self, x):
+        if 0 <= x >= 70:
+            return 'королева'
+        if 70 <= x >= 130:
+            return 'конь'
+        if 130 <= x >= 190:
+            return 'ладья'
+        if 190 <= x >= 240:
+            return 'слон'
+
+    def main(self):
+        self.wait_for_push()
+        self.parent.type_of_figure = self.get_promotion_figure(self.coords[1])
+        self.close()
+
+    def wait_for_push(self):
+        self.loop = QEventLoop(self)
+        self.loop.exec_()
+
+    def mousePressEvent(self, event):
+        print(event.x())
+        self.coords = event.x(), event.y()
+        self.loop.exit(0)
 
 
 if __name__ == '__main__':

@@ -391,7 +391,9 @@ class MainWindow(QMainWindow):
                     self.board.move(*move_bot)
                 self.do_paint = True
                 self.repaint()
-            # так как игра закончилась, разблокируем кнопку начла игры
+            # так как игра закончилась, разблокируем кнопку начла игры и доресуем все
+            self.do_paint = True
+            self.repaint()
             self.start_game.setEnabled(True)
 
         def check_for_draw(board):

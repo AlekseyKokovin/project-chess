@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
         self.start_game.setText('Начало игры')
         self.start_game.clicked.connect(self.unitUi)
 
+        """Добавление умной оценки позиции фигуры"""
         self.cost = {'пешка': [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
@@ -96,7 +97,7 @@ class MainWindow(QMainWindow):
             [2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0],
             [2.0, 3.0, 1.0, 0.0, 0.0, 1.0, 3.0, 2.0]
         ]}
-
+        """простая оценка фигуры"""
         self.cost_basic = {'пешка': 10, 'конь': 30, 'слон': 30, 'ладья': 50, 'королева': 90, 'король': 900}
 
     def mousePressEvent(self, event):
@@ -105,13 +106,16 @@ class MainWindow(QMainWindow):
             self.loop.exit(0)
 
     def wait_for_click(self):
+        """Создается QeventLoop, который закончить (self.loop.exit(0)) может только mousePressEvent"""
         self.loop = QEventLoop(self)
         self.loop.exec_()
 
     def get_possition(self, x, y):
+        """Определение координат на доске по координатам на окне"""
         return (7 - (y - 66) // 79), (x - 28) // 78
 
     def paintEvent(self, event):
+        """С помощью флагов распределяем что нужно перерисовать"""
         if self.do_paint:
             self.print_board(self.board)
             self.do_paint = False
@@ -123,9 +127,11 @@ class MainWindow(QMainWindow):
             self.repaint_selected_figure_flag = False
 
     def print_board(self, board):
+        # сначала прячем все изображения
         for i in self.figures:
             for j in self.figures[i]:
                 j.hide()
+        # а теперь добавим нужные
         for y in range(len(board.field_layout)):
             for x in range(len(board.field_layout[y])):
                 if board.field_layout[y][x]:
@@ -138,6 +144,7 @@ class MainWindow(QMainWindow):
                         pass
 
     def print_change(self, moves):
+        # вывод изображений, подсказывающих куда можно ходить
         green_image_image = QImage('файлы проекта/green_image.png')
         green_image_pixmap = QPixmap(green_image_image)
 
@@ -159,10 +166,12 @@ class MainWindow(QMainWindow):
             self.labels_for_print_change.append(label)
 
     def clear_labels_after_change(self):
+        # очистка изображений, подсказывающих куда можно ходить
         for i in self.labels_for_print_change:
             i.hide()
 
     def repaint_selected_figure(self, y, x):
+        # добавление изображение на выделенную фигуру
         self.selected_figure_label.show()
         self.selected_figure_label.move(28 + x * 77, 66 + (7 - y) * 78)
 
@@ -218,6 +227,9 @@ class MainWindow(QMainWindow):
                 return min_value
 
         def best_move(board):
+            """реализация бота с помощью поиска Min/Max с alpha beta отсечением minmax alrogithm:
+            https://en.wikipedia.org/wiki/Minimax#:~:text=A%20minimax%20algorithm%20is%20a,or%20state%20of%20the%20game.
+            """
             possible_moves = board.possible_moves_team(self.opposite_color)
             board_copy = deepcopy(board)
             best_num = -100000
@@ -239,6 +251,7 @@ class MainWindow(QMainWindow):
             return best_bot_move
 
         def get_moves_clean(y, x, color):
+            # Очистка всех ходов фигуры. Очищаем те, которые приводят к шаху
             possible_moves = self.board.field_layout[y][x].get_moves(self.board.field_layout, y, x)
             delete_indexes = []
             for move in range(len(possible_moves)):
@@ -255,6 +268,8 @@ class MainWindow(QMainWindow):
             self.wait_for_click()
             y, x = self.clicked_coords
             if self.num_of_clicks == 0:
+                # при первом проходе нужно вернуть координаты выбранной фигуры, поэтому используем цикл пока не найдем
+                # фигуру
                 while not self.board.field_layout[y][x] or (
                         self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0]
                         == self.opposite_color):
@@ -270,6 +285,8 @@ class MainWindow(QMainWindow):
                 self.repaint()
                 return y, x, 1
             while (y, x) not in self.moves_for_figure:
+                # при втором проходе нужно определить координаты куда фигура перейдет, либо если человек нажмет на
+                # другую белую фигуру, переключиться на нее
                 if (self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0]
                         != self.opposite_color):
                     self.clear_labels_after_change()
@@ -286,6 +303,7 @@ class MainWindow(QMainWindow):
             return y, x, False
 
         def check_board():
+            # проверка на исходы победа/проигрыш/ничья
             if self.board.mat(*self.board.king(self.main_color), self.main_color):
                 self.result_text.setText('Бот выиграл')
                 return True
@@ -300,12 +318,14 @@ class MainWindow(QMainWindow):
         def main():
             self.figures = {}
             i_name = 'белый '
+            # создание нескольких qlabel, так как во время игры с учетом всех проеденных пешек может получиться 10
+            # одинаковых фигур, то нужно создать 10 qlable для каждой фигуры
             for i in ['figures_white', 'figures_black']:
                 for j in ['конь', 'пешка', 'слон', 'король', 'королева', 'ладья']:
                     link = sqlite3.connect('файлы проекта/шахматы/chess.db').cursor().execute(
                         f"""SELECT link FROM {i} WHERE name = '{j}'""").fetchone()
                     all_the_labels = []
-                    for time in range(9):
+                    for time in range(10):
                         pic_pixmap = QPixmap(link[0])
                         pic_pixmap = pic_pixmap.scaled(70, 70, Qt.KeepAspectRatio)
                         pic_label = QLabel(self)
@@ -324,6 +344,10 @@ class MainWindow(QMainWindow):
             self.main_color = color_first
             # основной код
             self.board = Board(color_first, color_second)
+            # спрячем все фигуры, на случай если игра была начата заново
+            for name in self.figures:
+                for label in self.figures[name]:
+                    label.hide()
             while True:
                 if check_board():
                     break
@@ -341,10 +365,13 @@ class MainWindow(QMainWindow):
                 self.selected_figure_label.hide()
                 self.type_of_figure = ''
                 if self.board.field_layout[y][x].figure() == 'белый пешка' and y == 6 and y_to == 7:
+                    # в случае если фигура дошла до конца, нужно открыть окно с выбором фигуры
                     promotion_figure = Promotion(parent=self)
                     promotion_figure.show()
                     promotion_figure.main()
                     if not self.type_of_figure:
+                        # пользователь может закрыть окно, то тогда мы переходим на следующею
+                        # итерацию(ход начинается заново)
                         continue
                 if self.type_of_figure:
                     self.board.move(y, x, y_to, x_to, type_of_figure=self.type_of_figure)
@@ -359,19 +386,17 @@ class MainWindow(QMainWindow):
                     self.result_text.setText('Вы выиграли')
                     break
                 if (self.board.field_layout[move_bot[0]][move_bot[1]].
-                        figure() == 'черный пешка' and y == 1 and y_to == 0):
+                        figure() == 'черный пешка' and move_bot[2] == 0):
                     self.board.move(*move_bot, type_of_figure='королева')
                 else:
                     self.board.move(*move_bot)
                 self.do_paint = True
                 self.repaint()
-            # разблокирование всех кнопок
-            for name in self.figures:
-                for label in self.figures[name]:
-                    label.hide()
+            # так как игра закончилась, разблокируем кнопку начла игры
             self.start_game.setEnabled(True)
 
         def check_for_draw(board):
+            # ничья тогда, когда на поле остались только два короля
             amout_of_figures = 0
             for row in board:
                 for figure in row:
@@ -382,7 +407,9 @@ class MainWindow(QMainWindow):
         class Board:
             def __init__(self, first_color, second_color):
                 self.game_over = False
+                # порядковые номера фигур, используются для определения своего label
                 self.number_of_label = {'слон': 1, 'конь': 1, 'королева': 0, 'ладья': 1}
+                # создаем поле
                 self.field_layout = []
                 for row in range(8):
                     self.field_layout.append([None] * 8)
@@ -409,31 +436,22 @@ class MainWindow(QMainWindow):
                         if self.field_layout[y][x] and self.field_layout[y][x].figure() == color + ' ' + 'король':
                             return y, x
 
-            def possible_moves(self, y_now, x_now):
-                return_coords = []
-                for i in self.field_layout[y_now][x_now].get_moves(self.field_layout, y_now, x_now):
-                    self.move(y_now, x_now, i[0], i[1])
-                    if not self.shah(self.field_layout[i[0]][i[1]].figure().split()[0]):
-                        return_coords.append(i)
-                    self.move(i[0], i[1], y_now, x_now)
-                return return_coords
-
             def mat(self, y_king, x_king, color):
+                # проверка на мат, смотрим если нет возможности куда-то сходить у короля
                 if color == 'черный':
-                    color = 'белый'
-                elif color == 'белыц':
-                    color = 'черный'
-                moves = list(map(lambda x: (x[2], x[3]), self.possible_moves_team(color, True)))
-                list_of_hits = []
+                    color_to_get_move = 'белый'
+                elif color == 'белый':
+                    color_to_get_move = 'черный'
+                moves = list(map(lambda x: (x[2], x[3]), self.possible_moves_team(color_to_get_move, True)))
                 for y in range(y_king - 1, y_king + 1):
                     for x in range(x_king - 1, x_king + 1):
-                        if 0 <= y <= 7 and 0 <= x <= 7:
-                            list_of_hits.append((y, x) in moves)
-                if all(list_of_hits):
-                    self.game_over = True
-                return all(list_of_hits)
+                        if 0 <= y <= 7 and 0 <= x <= 7 and (y, x) not in moves:
+                            return False
+                return True
 
             def shah(self, color):
+                # Смотрим если на короля есть возможность атаки. В possible_moves_team в случае значения
+                # flag=True возвращаются все возможный ходы, даже которые "едят" короля
                 if color == 'черный':
                     color_for_moves = 'белый'
                 elif color == 'белый':
@@ -457,6 +475,8 @@ class MainWindow(QMainWindow):
                 return all_possible_moves
 
             def move(self, y_now, x_now, y_to, x_to, type_of_figure=None):
+                # type_of_figure - фигура на которую меняем пешку, в случае если переменныя действительна,
+                # мы делаем замену
                 if type_of_figure:
                     number = self.number_of_label[type_of_figure.lower()] + 1
                     self.number_of_label[type_of_figure.lower()] += 1
@@ -474,6 +494,7 @@ class MainWindow(QMainWindow):
                                                                number)
                     self.field_layout[y_now][x_now] = None
                     return True
+                # проверка на рокировку
                 if (self.field_layout[y_now][x_now] and self.field_layout[y_now][x_now].figure().split()[1]
                         == 'король' and y_now - y_to == 0 and abs(x_to - x_now) > 1):
                     if not self.field_layout[y_now][x_now - 1] and not self.field_layout[y_now][x_now - 2] and not \
@@ -489,6 +510,8 @@ class MainWindow(QMainWindow):
                         self.field_layout[y_now][x_now + 3], self.field_layout[y_now][x_now + 1] = None, \
                             self.field_layout[y_now][x_now + 3]
                 self.field_layout[y_now][x_now], self.field_layout[y_to][x_to] = None, self.field_layout[y_now][x_now]
+                # у короля и ладьи есть атрибут "moves" - количество ходов (то есть если король/ладья двинется, чтобы
+                # нельзя было делать рокировку)
                 try:
                     self.field_layout[y_to][x_to].moves += 1
                 except Exception:
@@ -588,6 +611,7 @@ class MainWindow(QMainWindow):
                         elif x != x_now:
                             continue
                         if x == x_now and board[y][x]:
+                            # в случае если встретилось препятствие, то мы не можем перейти через 2
                             flag_found_plus_two = True
                         elif not flag_found_plus_two:
                             moves_possible.append((y, x))
@@ -681,7 +705,7 @@ class MainWindow(QMainWindow):
 
             def get_moves(self, board, y_now, x_now):
                 moves_possible = []
-                # рокировка
+                # возможность рокировки
                 if (self.moves == 0 and x_now == 4 and board[y_now][x_now - 4] and
                         board[y_now][x_now - 4].figure().split()[1] == 'ладья' and board[y_now][x_now - 4].
                         moves == 0 and not board[y_now][x_now - 1] and not board[y_now][x_now - 2] and not
@@ -700,6 +724,7 @@ class MainWindow(QMainWindow):
                                     if self.check_numbers(y_, x_) and board[y_][x_] and board[y_][x_].figure() \
                                             .split()[1] == 'король' and \
                                             board[y_][x_].figure().split()[0] != self.color:
+                                        # запрещаем зод если рядом есть король другого цветы
                                         flag = False
                                         break
                                 if not flag:
@@ -726,6 +751,7 @@ class MainWindow(QMainWindow):
             def get_moves(self, board, y_now, x_now):
                 first = Bishop(self.color, 100)
                 second = Rook(self.color, 100)
+                # создаем две несуществующие фигуры, чтобы определить движение королевы(ход королевы = ладья + слон)
                 return first.get_moves(board, y_now, x_now) + second.get_moves(board, y_now, x_now)
 
         main()
@@ -784,6 +810,7 @@ class Promotion(QMainWindow):
     def main(self):
         self.wait_for_push()
         if not self.coords:
+            # если человек закрыл окно, то self.coords будут пустыми поэтому не будем ничего менять
             self.parent.type_of_figure = None
         else:
             self.parent.type_of_figure = self.get_promotion_figure(self.coords[0])

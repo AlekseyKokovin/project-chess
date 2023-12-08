@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
             possible_moves = board.possible_moves_team(self.opposite_color)
             board_copy = deepcopy(board)
             best_num = -100000
-            best_move = ''
+            best_bot_move = ''
             for move in possible_moves:
                 if board_copy.field_layout[move[0]][move[1]].figure().split()[1] == 'пешка' and move[2] == 0:
                     board_copy.move(*move, type_of_figure='королева')
@@ -235,8 +235,8 @@ class MainWindow(QMainWindow):
                 board_copy = deepcopy(board)
                 if num > best_num:
                     best_num = num
-                    best_move = move
-            return best_move
+                    best_bot_move = move
+            return best_bot_move
 
         def get_moves_clean(y, x, color):
             possible_moves = self.board.field_layout[y][x].get_moves(self.board.field_layout, y, x)
@@ -258,13 +258,13 @@ class MainWindow(QMainWindow):
                 while not self.board.field_layout[y][x] or (
                         self.board.field_layout[y][x] and self.board.field_layout[y][x].figure().split()[0]
                         == self.opposite_color):
-                    self.statusBar().showMessage('Неправильная фигура', 100)
+                    self.statusBar().showMessage('Неправильная фигура')
                     self.wait_for_click()
                     y, x = self.clicked_coords
                 self.repaint_selected_figure_flag = True
                 self.y_selected_figure, self.x_selected_figure = y, x
                 self.repaint()
-                self.statusBar().showMessage('', 100)
+                self.statusBar().showMessage('')
                 self.moves_for_figure = get_moves_clean(y, x, self.main_color)
                 self.print_change_flag = True
                 self.repaint()
@@ -298,7 +298,6 @@ class MainWindow(QMainWindow):
             return False
 
         def main():
-
             self.figures = {}
             i_name = 'белый '
             for i in ['figures_white', 'figures_black']:
@@ -345,6 +344,8 @@ class MainWindow(QMainWindow):
                     promotion_figure = Promotion(parent=self)
                     promotion_figure.show()
                     promotion_figure.main()
+                    if not self.type_of_figure:
+                        continue
                 if self.type_of_figure:
                     self.board.move(y, x, y_to, x_to, type_of_figure=self.type_of_figure)
                 else:
@@ -682,13 +683,13 @@ class MainWindow(QMainWindow):
                 moves_possible = []
                 # рокировка
                 if (self.moves == 0 and x_now == 4 and board[y_now][x_now - 4] and
-                        board[y_now][x_now - 4].figure().split()[1] == 'ладья' and board[y_now][x_now - 4]
-                                .moves == 0 and not board[y_now][x_now - 1] and not board[y_now][x_now - 2] and not
+                        board[y_now][x_now - 4].figure().split()[1] == 'ладья' and board[y_now][x_now - 4].
+                        moves == 0 and not board[y_now][x_now - 1] and not board[y_now][x_now - 2] and not
                         board[y_now][x_now - 3]):
                     moves_possible.append((y_now, x_now - 2))
                 if (self.moves == 0 and x_now == 4 and board[y_now][x_now + 3] and
-                        board[y_now][x_now + 3].figure().split()[1] == 'ладья' and board[y_now][x_now + 3]
-                                .moves == 0 and not board[y_now][x_now + 1] and not board[y_now][x_now + 2]):
+                        board[y_now][x_now + 3].figure().split()[1] == 'ладья' and board[y_now][x_now + 3].
+                        moves == 0 and not board[y_now][x_now + 1] and not board[y_now][x_now + 2]):
                     moves_possible.append((y_now, x_now + 2))
                 for y in range(y_now - 1, y_now + 2):
                     for x in range(x_now - 1, x_now + 2):
@@ -782,7 +783,10 @@ class Promotion(QMainWindow):
 
     def main(self):
         self.wait_for_push()
-        self.parent.type_of_figure = self.get_promotion_figure(self.coords[0])
+        if not self.coords:
+            self.parent.type_of_figure = None
+        else:
+            self.parent.type_of_figure = self.get_promotion_figure(self.coords[0])
         self.close()
 
     def wait_for_push(self):
@@ -791,6 +795,9 @@ class Promotion(QMainWindow):
 
     def mousePressEvent(self, event):
         self.coords = event.x(), event.y()
+        self.loop.exit(0)
+
+    def closeEvent(self, event):
         self.loop.exit(0)
 
 

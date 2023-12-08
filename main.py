@@ -242,8 +242,7 @@ class MainWindow(QMainWindow):
                 if board_copy.shah(self.opposite_color):
                     board_copy = deepcopy(board)
                     continue
-                num = minimax(board_copy, 1, -1000000, 1000000, False)
-                # поменять depth после тестов
+                num = minimax(board_copy, 2, -1000000, 1000000, False)
                 board_copy = deepcopy(board)
                 if num > best_num:
                     best_num = num
